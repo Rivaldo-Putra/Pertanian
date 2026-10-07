@@ -1,0 +1,77 @@
+demo-selesai.php
+<?php
+// KONEKSI DATABASE (ganti kalau beda)
+$host = '127.0.0.1';
+$user = 'root';
+$pass = '';
+$db   = 'db_pertanian';   // ganti kalau nama database kamu beda
+
+$pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+// TAMBAH KATEGORI
+if ($_POST['aksi'] ?? '' == 'tambah') {
+    $nama = $_POST['nama'];
+    $harga = $_POST['harga'];
+    $desk = $_POST['deskripsi'];
+
+    $foto = '';
+    if ($_FILES['foto']['size'] > 0) {
+        $nama_file = time() . '_' . $_FILES['foto']['name'];
+        move_uploaded_file($_FILES['foto']['tmp_name'], 'img_categories/' . $nama_file);
+        $foto = 'img_categories/' . $nama_file;
+    }
+
+    $pdo->prepare("INSERT INTO tb_categories (nama_categories, price, description, photo) VALUES (?,?,?,?)")
+        ->execute([$nama, $harga, $desk, $foto]);
+
+    header("Location: demo-selesai.php");
+    exit;
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DEMO SELESAI — RIVALDO JUARA</title>
+    <style>
+        body{font-family:Arial;background:#f0f2f5;padding:20px;}
+        table{border-collapse:collapse;width:100%;margin-top:20px;}
+        td,th{border:1px solid #ddd;padding:12px;text-align:center;}
+        img{max-width:300px;max-height:200px;border-radius:15px;}
+        input,button{padding:10px;margin:5px;}
+    </style>
+</head>
+<body>
+    <h1>Kategori Produk</h1>
+
+    <!-- FORM TAMBAH CEPAT -->
+    <form method="post" enctype="multipart/form-data">
+        <input name="nama" placeholder="Nama Kategori" required>
+        <input name="harga" type="number" placeholder="Harga" required>
+        <textarea name="deskripsi" placeholder="Deskripsi" required></textarea>
+        <input type="file" name="foto" accept="image/*">
+        <input type="hidden" name="aksi" value="tambah">
+        <button type="submit">TAMBAH SEKARANG</button>
+    </form>
+
+    <hr><h2>Daftar Kategori</h2>
+    <table>
+        <tr style="background:#4caf50;color:white;">
+            <th>Photo</th><th>Nama</th><th>Harga</th><th>Deskripsi</th>
+        </tr>
+        <?php
+        $stmt = $pdo->query("SELECT * FROM tb_categories ORDER BY id_categories DESC");
+        while ($r = $stmt->fetch()) {
+            $img = $r['photo'] ? $r['photo'] : 'https://via.placeholder.com/300x200?text=Tanpa+Foto';
+            echo "<tr>
+                <td><img src='$img'></td>
+                <td><b>{$r['nama_categories']}</b></td>
+                <td>Rp " . number_format($r['price']) . "</td>
+                <td>{$r['description']}</td>
+            </tr>";
+        }
+        ?>
+    </table>
+</body>
+</html>
